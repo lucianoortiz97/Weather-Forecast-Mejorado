@@ -1,0 +1,189 @@
+using System;
+using System.Collections.Generic;
+public abstract class Persona
+{
+    public string Nombre { get; set; }
+    public string Apellido { get; set; }
+
+    public Persona(string nombre, string apellido)
+    {
+        Nombre = nombre;
+        Apellido = apellido;
+    }
+}
+
+public class Pasante : Persona
+{
+    public int NumeroLegajo { get; set; }
+
+    public Pasante(string nombre, string apellido, int numeroLegajo) 
+        : base(nombre, apellido)
+    {
+        NumeroLegajo = numeroLegajo;
+    }
+}
+
+public class Profesional : Persona
+{
+    public int NumeroMatricula { get; set; }
+
+    public Profesional(string nombre, string apellido, int numeroMatricula) 
+        : base(nombre, apellido)
+    {
+        NumeroMatricula = numeroMatricula;
+    }
+}
+
+public class RegistroTemperatura
+{
+    public double Temperatura { get; set; }
+    public Persona PersonaDeTurno { get; set; }
+    public DateTime FechaRegistro { get; set; }
+    public DateTime HoraRegistro { get; set; }
+
+    public RegistroTemperatura(double temperatura, Persona personaDeTurno, DateTime fechaRegistro, DateTime horaRegistro)
+    {
+        Temperatura = temperatura;
+        PersonaDeTurno = personaDeTurno;
+        FechaRegistro = fechaRegistro;
+        HoraRegistro = horaRegistro;
+    }
+}
+
+public class EstacionMeteorologica
+{
+    private RegistroTemperatura[,] registros;
+    private List<Persona> personal;
+
+    public EstacionMeteorologica(int semanas, int dias)
+    {
+        registros = new RegistroTemperatura[semanas, dias];
+        personal = new List<Persona>
+        {
+            new Pasante("Luciano", "Pérez", 1001),
+            new Profesional("Fernando", "García", 2001),
+            new Pasante("Baltazar", "González", 1002),
+            new Profesional("Ana", "Rodríguez", 2002),
+            new Pasante("Carlos", "Sánchez", 1003),
+            new Profesional("Laura", "Fernández", 2003)
+        };
+    }
+
+    public void RegistrarTemperatura(RegistroTemperatura registro, int semana, int dia)
+    {
+        if (semana >= 0 && semana < registros.GetLength(0) && dia >= 0 && dia < registros.GetLength(1))
+        {
+            registros[semana, dia] = registro;
+        }
+    }
+
+    public double[,] VerTemperaturas()
+    {
+        double[,] temperaturas = new double[registros.GetLength(0), registros.GetLength(1)];
+        for (int i = 0; i < registros.GetLength(0); i++)
+        {
+            for (int j = 0; j < registros.GetLength(1); j++)
+            {
+                if (registros[i, j] != null)
+                {
+                    temperaturas[i, j] = registros[i, j].Temperatura;
+                }
+            }
+        }
+        return temperaturas;
+    }
+
+    public RegistroTemperatura VerTemperaturaDiaEspecifico(int semana, int dia)
+    {
+        if (semana >= 0 && semana < registros.GetLength(0) && dia >= 0 && dia < registros.GetLength(1))
+        {
+            return registros[semana, dia];
+        }
+        return null;
+    }
+
+    public void LlenarTemperaturas()
+    {
+        Random random = new Random();
+        DateTime fecha = new DateTime(2024, 8, 1); // Ejemplo de fecha de inicio
+        for (int i = 0; i < registros.GetLength(0); i++)
+        {
+            for (int j = 0; j < registros.GetLength(1); j++)
+            {
+                double temp = random.Next(-10, 35);
+                Persona persona = personal[(i + j) % personal.Count];
+                registros[i, j] = new RegistroTemperatura(temp, persona, fecha, fecha.AddHours(8 * ((i + j) % 3)));
+                fecha = fecha.AddDays(1);
+            }
+        }
+    }
+}
+
+public static class CalculoTemperaturas
+{
+    public static double CalcularPromedioMensual(double[,] temperaturas)
+    {
+        double sumaTotal = 0;
+        int totalDias = 0;
+        for (int i = 0; i < temperaturas.GetLength(0); i++)
+        {
+            for (int j = 0; j < temperaturas.GetLength(1); j++)
+            {
+                sumaTotal += temperaturas[i, j];
+                totalDias++;
+            }
+        }
+        return sumaTotal / totalDias;
+    }
+
+    public static double EncontrarTemperaturaMaxima(double[,] temperaturas)
+    {
+        double max = double.MinValue;
+        for (int i = 0; i < temperaturas.GetLength(0); i++)
+        {
+            for (int j = 0; j < temperaturas.GetLength(1); j++)
+            {
+                if (temperaturas[i, j] > max)
+                {
+                    max = temperaturas[i, j];
+                }
+            }
+        }
+        return max;
+    }
+
+    public static double EncontrarTemperaturaMinima(double[,] temperaturas)
+    {
+        double min = double.MaxValue;
+        for (int i = 0; i < temperaturas.GetLength(0); i++)
+        {
+            for (int j = 0; j < temperaturas.GetLength(1); j++)
+            {
+                if (temperaturas[i, j] < min)
+                {
+                    min = temperaturas[i, j];
+                }
+            }
+        }
+        return min;
+    }
+}
+
+// Ejemplo 
+class Program
+{
+    static void Main(string[] args)
+    {
+        EstacionMeteorologica estacion = new EstacionMeteorologica(5, 7);
+        estacion.LlenarTemperaturas();
+
+        double[,] temperaturas = estacion.VerTemperaturas();
+        double promedio = CalculoTemperaturas.CalcularPromedioMensual(temperaturas);
+        double maxTemp = CalculoTemperaturas.EncontrarTemperaturaMaxima(temperaturas);
+        double minTemp = CalculoTemperaturas.EncontrarTemperaturaMinima(temperaturas);
+
+        Console.WriteLine($"Temperatura promedio del mes: {promedio}°C");
+        Console.WriteLine($"Temperatura máxima del mes: {maxTemp}°C");
+        Console.WriteLine($"Temperatura mínima del mes: {minTemp}°C");
+    }
+}
